@@ -24,7 +24,9 @@ function PresentationList() {
         });
     }, []);
 
+
     const joinPresentation = async (presentationId) => {
+        await fetch('https://task6-backend-vdat.onrender.com/api');
         if (!name.trim()) {
             alert('Please enter your name');
             return;
@@ -75,9 +77,13 @@ function PresentationList() {
                 }),
             });
 
+            console.log('Response from API:', response);
+
             if (response.ok) {
+                console.log('Navigating to presentation:', `/presentation/${presentationId}`);
                 navigate(`/presentation/${presentationId}`);
             } else {
+                console.log('Response not OK:', response.status);
                 alert('Failed to join presentation');
             }
 

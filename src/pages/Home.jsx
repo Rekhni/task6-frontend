@@ -13,42 +13,64 @@ function Home() {
     const navigate = useNavigate();
 
     const handleCreatePresentation = async () => {
+        await fetch('https://task6-backend-vdat.onrender.com/api');
         if (!name.trim()) {
             alert('Please enter your name');
             return;
         }
+
+        if (!title.trim()) {
+            alert('Please enter presentation title');
+            return;
+        }
+
         const newPresentationId = generatePresentationId();
         localStorage.setItem('userName', name);
         localStorage.setItem('userRole', 'creator');
 
-        const response = await fetch(`${API_URL}/api/users`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                presentationId: newPresentationId,
-                userId: name,
-                name,
+        try {
+            console.log("🔵 Creating presentation with ID:", newPresentationId);
+
+            const response = await fetch(`${API_URL}/api/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    presentationId: newPresentationId,
+                    userId: name,
+                    name,
+                    role: 'creator',
+                }),
+            });
+
+            console.log("🟢 Response from server:", response);
+
+            if (!response.ok) {
+                const responseBody = await response.text();
+                console.error("🔴 Server response error:", responseBody);
+                alert(`Failed to create presentation: ${response.status} ${response.statusText}`);
+                return;
+            }
+
+            const presentationRef = ref(db, `presentations/${newPresentationId}`);
+            await set(presentationRef, {
+                title,
+                author: name,
+                createdAt: new Date().toISOString(),
+            });
+    
+
+            const userRef = ref(db, `presentations/${newPresentationId}/users/${name}`);
+            await set(userRef, {
+                name: name,
                 role: 'creator',
-            }),
-        });
+            });
 
-        const presentationRef = ref(db, `presentations/${newPresentationId}`);
-        await set(presentationRef, {
-            title,
-            author: name,
-            createdAt: new Date().toISOString(),
-        });
-
-        const userRef = ref(db, `presentations/${newPresentationId}/users/${name}`);
-        await set(userRef, {
-            name: name,
-            role: 'creator',
-        });
-
-        if (response.ok) {
+            console.log("🟢 Presentation created successfully, navigating to:", `/presentation/${newPresentationId}`);
             navigate(`/presentation/${newPresentationId}`);
-        } else {
-            alert('Failed to create presentation');
+
+        } catch (err) {
+            console.error("🔴 Error creating presentation:", err);
+            alert('An error occurred while creating the presentation');
         }
     };
 
